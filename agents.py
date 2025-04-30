@@ -324,6 +324,7 @@ class Agent(nn.Module):
 
                 init_states = flatten_state(prior_states)
                 _, posterior_states = self.wm.posterior(obs_embed=self.wm.obs_encoder(preferred_obs).expand(batch_b*batch_t, self.wm.obs_encoder.embed_size), prev_action=None, prev_state=init_states, is_init=True)
+                # _, posterior_states = self.wm.posterior(obs_embed=self.wm.obs_encoder(predicted_obs.detach()).reshape(-1, self.wm.obs_encoder.embed_size), prev_action=None, prev_state=init_states, is_init=True)
                 prior_dist = get_dist(init_states)
                 post_dist = get_dist(posterior_states)
                 epistemic_term = D.kl_divergence(post_dist, prior_dist).reshape(*logprob_preferences.shape) / init_states['stoch'].shape[-1]

@@ -87,7 +87,7 @@ class TransitionModel(nn.Module):
 
     def forward(self, prev_action: torch.Tensor, prev_state: dict):
         rnn_input = self._rnn_input_model(torch.cat([prev_action, prev_state['stoch']], dim=-1))
-        deter_state = self._cell(rnn_input, prev_state['deter'])
+        deter_state = self._cell(rnn_input, prev_state['deter'])        # Different from original dreamer
         mean, std = torch.chunk(self._stochastic_prior_model(deter_state), 2, dim=-1)
         std = F.softplus(std) + 0.1
         dist = D.Independent(self._dist(mean, std), 1)
@@ -126,7 +126,7 @@ class RepresentationModel(nn.Module):
             prior_state = prev_state
         else:
             prior_state = transition_model(prev_action, prev_state)
-        x = torch.cat([prior_state['stoch'], prior_state['deter'], obs_embed], dim=-1)
+        x = torch.cat([prior_state['stoch'], prior_state['deter'], obs_embed], dim=-1)      # Different from original dreamer
         mean, std = torch.chunk(self._stochastic_posterior_model(x), 2, dim=-1)
         std = F.softplus(std) + 0.1
         dist = D.Independent(self._dist(mean, std), 1)

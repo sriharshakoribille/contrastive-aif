@@ -28,7 +28,7 @@ def visualize_current_obs(obs):
 def save_model(model, save_dir):
     torch.save(model, save_dir)
 
-def collect_random_episode(env, model, preferred_obs, episode_store, returns, free_energies, config):
+def collect_random_episode(env, model:Agent, preferred_obs, episode_store, returns, free_energies, config):
     with torch.no_grad():
         device = config['device']
         episode = dict(obs=[], act=[], rew=[], free_energy=[], done=[])
@@ -123,8 +123,9 @@ def main(config):
         seed = int(config['seed'])
         torch.manual_seed(seed)
         np.random.seed(seed)
-    seed_str = str(datetime.datetime.now().timestamp()) if config['seed'] is None else 'seed_' + str(seed)
-    logdir = Path(config['logdir']) /  config['suite'] / config['task'] / '_'.join(config['config']) / config['algo'] / seed_str
+    seed_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") if config['seed'] is None else 'seed_' + str(seed)
+    logdir = Path(config['logdir']) /  config['suite'] / config['task'] \
+            / '_'.join(config['config']) / config['algo'] / config['custom_msg'] / seed_str
 
     if not os.path.isdir(logdir):
         os.makedirs(logdir)
@@ -134,13 +135,14 @@ def main(config):
         json.dump(config, fp, indent=4)
 
     # Options
-    device = 'cuda:0' if torch.cuda.is_available() and not config['disable_cuda'] else 'cpu'
+    device = 'cuda:'+str(config['cuda_id']) if torch.cuda.is_available() and not config['disable_cuda'] else 'cpu'
     config['device'] = device
 
     # Create env
     env = wrappers.make_env(suite=config['suite'], task_name=config['task'], grid_size=config['grid_size'])
     config['action_size'] = env.action_space.shape[0]
     action_repeat = env._action_repeat
+    # action_repeat = 1
 
     # Setup model
     model = Agent(device=device, config=config)
@@ -254,7 +256,9 @@ def main(config):
                 model.update_target_network(1., model.value_model, model.value_target)
             # Save model
             if config['save_every'] > 0 and tot_episodes % config['save_every'] == 0:
-                save_model(model, str(logdir / f'world_model.pt'))
+                name = f'model_{tot_episodes}.pt'
+                save_model(model, str(logdir / name))
+                # save_model(model, str(logdir / f'world_model.pt'))
             
         done = False
 
@@ -314,7 +318,7 @@ def main(config):
                     # print('Step: ', current_step, ' Return: ', np.round(cur_return, 2), 'Expected Free Energy: ', np.round(policy_dict['policy_expected_loss'],2) )
                     writer.add_scalar('environment/return', cur_return, global_step=current_step)
                     writer.add_scalar('environment/return_over_episodes', cur_return, global_step=tot_episodes)
-                    writer.add_scalar('environment/free_energy', np.sum(episode['free_energy']), global_step=current_step)
+                    writer.add_scalar('environment/free_energy', torch.stack(episode['free_energy']).sum().item(), global_step=current_step)
                     for k in policy_dict:
                         writer.add_scalar('environment/' + k, policy_dict[k] , global_step=current_step)
                     
@@ -345,6 +349,8 @@ if __name__ == '__main__':
     
     parser.add_argument('--disable-cuda', help='disable cuda', action='store_true', default=False)
     parser.add_argument('--seed', help='set random seed', default=None, type=int)
+    parser.add_argument('--custom_msg', help='Custom message', default='')
+    parser.add_argument('--cuda_id', help='Cuda device id', default=0, type=int)
     
     parser.add_argument('--save-every', help='save model', default=0, type=int)
     parser.add_argument('--render-every', help='render agent', default=0, type=int)
