@@ -16,7 +16,7 @@ class EpisodeStore:
         self.episodes.append(Episode(obs, act, rew, free_energy, done))
         self.n_episodes = min(self.n_episodes + 1, self.maxlen)
 
-    def sample_paths(self, n_paths, path_length, device='cuda' if torch.cuda.is_available() else 'cpu', balance_ends=True):
+    def sample_paths(self, n_paths, path_length, device, balance_ends=True):
         episode_indexes = np.random.randint(0, self.n_episodes, n_paths)
         
         if balance_ends:
@@ -60,7 +60,7 @@ class Episode:
         return self._done
 
 class RandomPolicy:
-    def __init__(self, action_space, policy_lookahead=1, device='cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(self, action_space, device, policy_lookahead=1):
         assert policy_lookahead > 0
         self._policy_lookahead = policy_lookahead
         self._action_space = action_space

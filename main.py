@@ -210,7 +210,8 @@ def main(config):
             for i in range(n_epochs):
                 log_time = i == n_epochs - 1
                 log_images =  (config['recon_every'] > 0) and (tot_episodes % config['recon_every'] == 0) and log_time
-                path_obs, path_act, path_rew, path_done = episode_store.sample_paths(n_paths, n_steps, balance_ends=balance_ends) 
+                path_obs, path_act, path_rew, path_done = episode_store.sample_paths(n_paths, n_steps, device=device,
+                                                                                     balance_ends=balance_ends) 
                 
                 update_target = i + 1 % 100 == 0 
                 states, loss_dict, reconstruction_dict = model.train_world(path_obs, path_act, path_rew, preferred_obs,  path_done=path_done,

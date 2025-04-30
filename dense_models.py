@@ -6,8 +6,8 @@ import torch.nn.functional as F
 
 
 class ActionModel(nn.Module):
-    def __init__(self, action_size, feature_size, hidden_size, layers, dist='tanh_normal',
-                 activation=nn.ELU, min_std=1e-4, init_std=5, mean_scale=5, device='cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(self, action_size, feature_size, hidden_size, layers, device, dist='tanh_normal',
+                 activation=nn.ELU, min_std=1e-4, init_std=5, mean_scale=5):
         super().__init__()
         self.action_size = action_size
         self.feature_size = feature_size
@@ -59,6 +59,8 @@ class TanhBijector(D.Transform):
     def __init__(self):
         super().__init__()
         self.bijective = True
+        self.domain = D.constraints.real
+        self.codomain = D.constraints.interval(-1.0, 1.0)
 
     @property
     def sign(self):

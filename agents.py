@@ -57,13 +57,14 @@ def get_dist(rssm_state: dict):
 
 class Agent(nn.Module):
     def __init__(self, 
+                    device, 
                     config=None,
                     world_lr=6e-4, 
                     policy_lr=8e-5, 
                     value_lr=8e-5, 
-                    device='cuda' if torch.cuda.is_available() else 'cpu', 
                 ):
         super().__init__()
+        print("Device is ",device)
 
         self.config = config
 
@@ -76,7 +77,7 @@ class Agent(nn.Module):
         self.wm = WorldModel(config)
         self.world_optim = torch.optim.Adam(utils.get_parameters([self.wm]), lr=world_lr)
             
-        self.policy = ActionModel(self._action_size, 230, 200, 3, dist=self.action_dist)
+        self.policy = ActionModel(self._action_size, 230, 200, 3, device=device, dist=self.action_dist)
         self.policy_optim = torch.optim.Adam(self.policy.parameters(), lr=policy_lr)
 
         self.reinforce = self.action_dist == 'one_hot'
